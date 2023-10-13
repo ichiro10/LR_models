@@ -9,8 +9,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score, mean_squared_error
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LinearRegression
-from sklearn.preprocessing import PolynomialFeatures
-from sklearn.linear_model import Ridge, Lasso
+from sklearn.linear_model import Ridge, Lasso ,ElasticNet
 from sklearn.dummy import DummyRegressor
 
 # Define a list of baseline strategies and their respective arguments
@@ -70,7 +69,15 @@ def Preparing_models(X_train, X_test, y_train):
         for i, a in enumerate(alpha_values):
                 lasso_model = Lasso(alpha=a)
                 lasso_model.fit(X_train, y_train)
-                models.append(("Lasso Regression"+str(i), lasso_model))
+                models.append(("Lasso Regression"+"alpha=" +str(a), lasso_model))
+
+        # elastic net
+        alpha_values = [1e-4, 1e-3, 1e-2, 0.1, 1.0, 10.0, 100.0, 1000.0, 10000.0]
+        for i, a in enumerate(alpha_values):
+                ElasticNet_model = ElasticNet(alpha = a, l1_ratio=0.4)
+                ElasticNet_model.fit(X_train, y_train)
+                models.append(("ElasticNet Regression"+"alpha=" +str(a), ElasticNet_model))
+        
 
         return models
 
@@ -78,7 +85,7 @@ def data_preprocessing(data):
         print(data.info())
         print(data.nunique())
         print(data.describe(include='all'))
-        
+
         #data_viz(data)
         #missed values 
         print(data.isnull().sum())
