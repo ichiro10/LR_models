@@ -60,21 +60,17 @@ def Preparing_models(X_train, X_test, y_train):
         linear_model.fit(X_train, y_train)
         models.append(("Linear Regression", linear_model))
         
-        '''''
-        poly_model = PolynomialFeatures(degree=2)
-        X_poly_train = poly_model.fit_transform(X_train)
-        X_poly_test = poly_model.transform(X_test)
-        poly_reg = LinearRegression()
-        poly_reg.fit(X_poly_train, y_train)
-        models.append(("Polynomial Regression (Degree 2)", poly_reg))
-        '''
+
         ridge_model = Ridge(alpha=1.0)
         ridge_model.fit(X_train, y_train)
         models.append(("Ridge Regression", ridge_model))
+        
+        alpha_values = [1e-4, 1e-3, 1e-2, 0.1, 1.0, 10.0, 100.0, 1000.0, 10000.0]
 
-        lasso_model = Lasso(alpha=1.0)
-        lasso_model.fit(X_train, y_train)
-        models.append(("Lasso Regression", lasso_model))
+        for i, a in enumerate(alpha_values):
+                lasso_model = Lasso(alpha=a)
+                lasso_model.fit(X_train, y_train)
+                models.append(("Lasso Regression"+str(i), lasso_model))
 
         return models
 
@@ -88,14 +84,14 @@ def data_preprocessing(data):
 
         #categorical data 
         dummies = pd.get_dummies(data["RAD"],dtype=int ,prefix="RAD")
-        # Concatenate the original DataFrame with the dummy variables
+        #Concatenate the original DataFrame with the dummy variables
         data = pd.concat([data, dummies], axis=1)
 
         # Drop the original categorical column 
         data = data.drop(columns=['RAD'])
-
+        
         #outliers 
-        qt = QuantileTransformer(output_distribution='normal')
+        qt = QuantileTransformer(output_distribution='normal', n_quantiles=100)
 
         for col in data.columns:
             data[col] = data[col] = qt.fit_transform(pd.DataFrame(data[col]))
