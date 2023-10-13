@@ -5,7 +5,78 @@ import seaborn as sns
 import scipy.stats as stats
 from sklearn.preprocessing import QuantileTransformer
 from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import r2_score, mean_squared_error
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.linear_model import Ridge, Lasso
+from sklearn.dummy import DummyRegressor
 
+# Define a list of baseline strategies and their respective arguments
+baseline_strategies = [
+    {"strategy": "constant", "constant": 50},
+    {"strategy": "quantile", "quantile": 0.75},
+    {"strategy": "mean"},
+    {"strategy": "median"}
+]
+
+# Define a function to create and evaluate dummy regressors
+def evaluate_dummy_regressor(strategy_args, X_train, y_train, X_test, y_test):
+    baseline = DummyRegressor(**strategy_args)
+    baseline.fit(X_train, y_train)
+    y_pred = baseline.predict(X_test)
+    mse = mean_squared_error(y_test, y_pred)
+    r2 = r2_score(y_test, y_pred)
+    predictionVStrue(y_test, y_pred, mse, r2, 'baseline', strategy_args)
+
+
+def predictionVStrue(y_true, y_pred, mse, r2 ,name ,strategy):
+    plt.scatter(y_true, y_pred, label=f'{name},{strategy}\nMSE: {mse:.2f}, R-squared: {r2:.2f}')
+    plt.plot([min(y_true), max(y_true)], [min(y_true), max(y_true)], linestyle='--', color='red', label='Perfect Prediction')
+    plt.xlabel("True Values")
+    plt.ylabel("Predictions")
+    plt.legend()
+    plt.title("Regression Model Predictions")
+    plt.show()    
+
+
+def residual_plot(y_true, y_pred, model_name):
+        plt.plot(y_pred, y_true - y_pred, "*")
+        plt.plot(y_pred, np.zeros_like(y_pred), "-")
+        plt.legend(["Data", "Perfection"])
+        plt.title("Residual Plot of " + model_name)
+        plt.xlabel("Predicted Value")
+        plt.ylabel("Residual")
+        plt.show()   
+
+
+def Preparing_models(X_train, X_test, y_train):
+        # Créez une liste pour stocker les modèles
+        models = []
+
+        # Étape 2 : Initialisez et entraînez différents modèles
+        linear_model = LinearRegression()
+        linear_model.fit(X_train, y_train)
+        models.append(("Linear Regression", linear_model))
+        
+        '''''
+        poly_model = PolynomialFeatures(degree=2)
+        X_poly_train = poly_model.fit_transform(X_train)
+        X_poly_test = poly_model.transform(X_test)
+        poly_reg = LinearRegression()
+        poly_reg.fit(X_poly_train, y_train)
+        models.append(("Polynomial Regression (Degree 2)", poly_reg))
+        '''
+        ridge_model = Ridge(alpha=1.0)
+        ridge_model.fit(X_train, y_train)
+        models.append(("Ridge Regression", ridge_model))
+
+        lasso_model = Lasso(alpha=1.0)
+        lasso_model.fit(X_train, y_train)
+        models.append(("Lasso Regression", lasso_model))
+
+        return models
 
 data = pd.read_csv('c:/Users/ghamm/OneDrive/Bureau/UQAC/TP/AA/boston.csv')
 print(data)
@@ -62,11 +133,40 @@ sns.heatmap(params.corr(),annot=True, fmt="0.1g", cmap='PiYG')
 plt.show()
 '''''
 
-inputs = data.drop('MEDV', axis=1)
-targets = data['MEDV']
+params = data.drop('MEDV', axis=1)
+target = data['MEDV']
 
 scalar = StandardScaler()
-scalar.fit(inputs)
-scaled_inputs = scalar.transform(inputs)
+scalar.fit(params)
+scaled_inputs = scalar.transform(params)
 
-print(targets)
+
+#LR model
+''''' 
+#One variable 
+y= data['MEDV']
+x1= data['CRIM']
+plt.scatter(x1,y)
+plt.xlabel('CRIM', fontsize = 20)
+plt.ylabel('MEDV', fontsize = 20) 
+plt.show()
+'''
+
+# Étape 3 : Effectuez des prédictions sur l'ensemble de test et évaluez les modèles
+plt.figure(figsize=(12, 6))
+#split the data
+X_train, X_test, y_train, y_test = train_test_split(params, target, test_size=0.2, random_state = 42)
+
+# Loop through the baseline strategies and evaluate dummy regressors
+for strategy_args in baseline_strategies:
+    evaluate_dummy_regressor(strategy_args, X_train, y_train, X_test, y_test)
+
+
+models= Preparing_models(X_train, X_test, y_train)
+for name, model in models:
+    y_pred = model.predict(X_test)
+    mse = mean_squared_error(y_test, y_pred)
+    r2 = r2_score(y_test, y_pred)
+    predictionVStrue(y_test, y_pred, mse, r2,name, strategy='')
+    residual_plot(y_test, y_pred, name)
+
