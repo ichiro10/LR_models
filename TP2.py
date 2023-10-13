@@ -161,4 +161,12 @@ for name, model in models:
     r2 = r2_score(y_test, y_pred)
     predictionVStrue(y_test, y_pred, mse, r2,name, strategy='')
     residual_plot(y_test, y_pred, name)
-
+    # Print results
+    print(f"Model: {name}")
+    print("MSE and R2 score:")
+    print(f"MSE: {mse}, R^2: {r2}")
+    print("Coefficients:")
+    print(model.coef_)
+    print("Intercept:")
+    print(model.intercept_)
+    print("\n")
