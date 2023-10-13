@@ -78,84 +78,72 @@ def Preparing_models(X_train, X_test, y_train):
 
         return models
 
-data = pd.read_csv('c:/Users/ghamm/OneDrive/Bureau/UQAC/TP/AA/boston.csv')
-print(data)
-print(data.info())
-print(data.shape)
-print(data.nunique())
-print(data.describe(include='all'))
-#missed values 
-print(data.isnull().sum())
+def data_preprocessing(data):
+        print(data.info())
+        print(data.nunique())
+        print(data.describe(include='all'))
+        #data_viz(data)
+        #missed values 
+        print(data.isnull().sum())
 
-#categorical data 
-dummies = pd.get_dummies(data["RAD"],dtype=int ,prefix="RAD")
-# Concatenate the original DataFrame with the dummy variables
-data = pd.concat([data, dummies], axis=1)
+        #categorical data 
+        dummies = pd.get_dummies(data["RAD"],dtype=int ,prefix="RAD")
+        # Concatenate the original DataFrame with the dummy variables
+        data = pd.concat([data, dummies], axis=1)
 
-# Drop the original categorical column if needed
-data = data.drop(columns=['RAD'])
+        # Drop the original categorical column 
+        data = data.drop(columns=['RAD'])
 
-print(data)
+        #outliers 
+        qt = QuantileTransformer(output_distribution='normal')
 
-#outliers 
-qt = QuantileTransformer(output_distribution='normal')
+        for col in data.columns:
+            data[col] = data[col] = qt.fit_transform(pd.DataFrame(data[col]))
+        
 
-for col in data.columns:
-    data[col] = data[col] = qt.fit_transform(pd.DataFrame(data[col]))
-'''''
-for column in data.columns : 
-    plt.figure(figsize = (14,4))
-    sns.histplot(data[column])
-    plt.title(column)
-    plt.show()    
+        for col in data:
+                q1 = data[col].quantile(0.25)
+                q3 = data[col].quantile(0.75)
+                iqr = q3 - q1
+                whisker_width = 1.5
+                lower_whisker = q1 - (whisker_width * iqr)
+                upper_whisker = q3 + whisker_width * iqr
+                data[col] = np.where(data[col] > upper_whisker, upper_whisker, np.where(data[col] < lower_whisker, lower_whisker, data[col]))
+       
+        params = data.drop('MEDV', axis=1)
+        target = data['MEDV']
 
-'''''
+        scalar = StandardScaler()
+        scalar.fit(params)
+        scaled_inputs = scalar.transform(params)
 
-for col in data:
-    q1 = data[col].quantile(0.25)
-    q3 = data[col].quantile(0.75)
-    iqr = q3 - q1
-    whisker_width = 1.5
-    lower_whisker = q1 - (whisker_width * iqr)
-    upper_whisker = q3 + whisker_width * iqr
-    data[col] = np.where(data[col] > upper_whisker, upper_whisker, np.where(data[col] < lower_whisker, lower_whisker, data[col]))
-'''''
-for column in data:
-        sns.boxplot(data = data, x = column)
+        return scaled_inputs, target
+
+def data_viz(data):
+      for column in data.columns : 
+        plt.figure(figsize = (14,4))
+        sns.histplot(data[column])
+        plt.title(column)
         plt.show()    
 
+      for column in data:
+                sns.boxplot(data = data, x = column)
+                plt.show()    
 
-params = data[['CRIM', 'ZN', 'INDUS', 'CHAS', 'NOX', 'RM', 'AGE', 'DIS',  'TAX',
-       'PTRATIO', 'B', 'LSTAT','RAD_1' , 'RAD_2' , 'RAD_3' , 'RAD_4' , 'RAD_5' , 'RAD_6' , 'RAD_7' , 'RAD_8' , 'RAD_24']]
-plt.figure(figsize=(10,10))
-sns.set_theme()
-sns.heatmap(params.corr(),annot=True, fmt="0.1g", cmap='PiYG')
-plt.show()
-'''''
+      params = data[['CRIM', 'ZN', 'INDUS', 'CHAS', 'NOX', 'RM', 'AGE', 'DIS',  'TAX',
+        'PTRATIO', 'B', 'LSTAT','RAD']]
+      plt.figure(figsize=(10,10))
+      sns.set_theme()
+      sns.heatmap(params.corr(),annot=True, fmt="0.1g", cmap='PiYG')
+      plt.show()            
 
-params = data.drop('MEDV', axis=1)
-target = data['MEDV']
-
-scalar = StandardScaler()
-scalar.fit(params)
-scaled_inputs = scalar.transform(params)
-
-
-#LR model
-''''' 
-#One variable 
-y= data['MEDV']
-x1= data['CRIM']
-plt.scatter(x1,y)
-plt.xlabel('CRIM', fontsize = 20)
-plt.ylabel('MEDV', fontsize = 20) 
-plt.show()
-'''
-
-# Étape 3 : Effectuez des prédictions sur l'ensemble de test et évaluez les modèles
+      
+data = pd.read_csv('c:/Users/ghamm/OneDrive/Bureau/UQAC/TP/AA/boston.csv')
 plt.figure(figsize=(12, 6))
+
+scaled_inputs, target = data_preprocessing(data)
 #split the data
-X_train, X_test, y_train, y_test = train_test_split(params, target, test_size=0.2, random_state = 42)
+X_train, X_test, y_train, y_test = train_test_split(scaled_inputs, target, test_size=0.2, random_state = 42)
 
 # Loop through the baseline strategies and evaluate dummy regressors
 for strategy_args in baseline_strategies:
