@@ -78,6 +78,7 @@ def data_preprocessing(data):
         print(data.info())
         print(data.nunique())
         print(data.describe(include='all'))
+        
         #data_viz(data)
         #missed values 
         print(data.isnull().sum())
